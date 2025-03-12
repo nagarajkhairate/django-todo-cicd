@@ -1,19 +1,19 @@
-# Use an official Python runtime as a parent image
-FROM python:3
+# Use a specific version of Python
+FROM python:3.8
 
-# Install distutils and other required dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y python3-distutils
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /data
 
-# Install Django
+# Install Django 3.2
 RUN pip install django==3.2
 
-# Copy the current directory contents into the container at /data
+# Copy the project files into the container
 COPY . .
 
-# Run the Django migrations
+# Run Django migrations
 RUN python manage.py migrate
 
 # Expose port (Optional, depending on your app)
