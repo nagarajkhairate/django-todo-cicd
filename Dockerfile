@@ -7,13 +7,14 @@ RUN apt-get update && apt-get install -y python3-distutils
 # Set the working directory
 WORKDIR /data
 
-# Install Django 3.2 and project dependencies
+# Install Django 3.2
 RUN pip install django==3.2
-COPY requirements.txt .  # Add this if you have a requirements.txt
-RUN pip install -r requirements.txt  # Install dependencies from requirements.txt
 
 # Copy the project files into the container
 COPY . .
+
+# Run Django migrations
+RUN python manage.py migrate
 
 # Expose port (Optional, depending on your app)
 EXPOSE 8000
