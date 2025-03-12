@@ -28,7 +28,10 @@ pipeline {
             steps {
                 script {
                     // Run the Docker container and expose the appropriate port
-                    sh 'docker run -d -p 8000:8000 ${DOCKER_IMAGE}:${DOCKER_TAG}'
+                    sh 'docker run -d -p 8000:8000 --name django-todo-app ${DOCKER_IMAGE}:${DOCKER_TAG}'
+                    
+                    // Wait for the container to start up fully (this is optional but a good practice)
+                    sh 'sleep 10' // Adjust sleep time if needed based on container startup time
                 }
             }
         }
@@ -37,7 +40,15 @@ pipeline {
             steps {
                 script {
                     // Run Django migrations inside the container
-                    sh 'docker exec $(docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}") python manage.py migrate'
+                    sh '''
+                    CONTAINER_ID=$(docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    if [ -n "$CONTAINER_ID" ]; then
+                        docker exec $CONTAINER_ID python manage.py migrate
+                    else
+                        echo "Error: Docker container is not running!"
+                        exit 1
+                    fi
+                    '''
                 }
             }
         }
@@ -46,7 +57,15 @@ pipeline {
             steps {
                 script {
                     // Run Django tests inside the container
-                    sh 'docker exec $(docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}") python manage.py test'
+                    sh '''
+                    CONTAINER_ID=$(docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    if [ -n "$CONTAINER_ID" ]; then
+                        docker exec $CONTAINER_ID python manage.py test
+                    else
+                        echo "Error: Docker container is not running!"
+                        exit 1
+                    fi
+                    '''
                 }
             }
         }
@@ -55,7 +74,15 @@ pipeline {
             steps {
                 script {
                     // Optionally create a Django superuser inside the container
-                    sh 'docker exec -it $(docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}") python manage.py createsuperuser --noinput'
+                    sh '''
+                    CONTAINER_ID=$(docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    if [ -n "$CONTAINER_ID" ]; then
+                        docker exec -it $CONTAINER_ID python manage.py createsuperuser --noinput
+                    else
+                        echo "Error: Docker container is not running!"
+                        exit 1
+                    fi
+                    '''
                 }
             }
         }
