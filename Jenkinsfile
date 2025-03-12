@@ -10,8 +10,8 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Checkout the repository
-                git 'https://github.com/nagarajkhairate/django-todo-cicd.git'
+                // Checkout the repository from the specified branch
+                git branch: 'develop', url: 'https://github.com/nagarajkhairate/django-todo-cicd.git'
             }
         }
 
@@ -73,9 +73,20 @@ pipeline {
 
     post {
         always {
-            // Clean up Docker containers after the job is done
-            sh 'docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}" | xargs docker rm -f'
-            sh 'docker images -q ${DOCKER_IMAGE}:${DOCKER_TAG} | xargs docker rmi -f'
+            // Clean up Docker containers if any exist
+            sh '''
+            CONTAINERS=$(docker ps -q -f "ancestor=${DOCKER_IMAGE}:${DOCKER_TAG}")
+            if [ -n "$CONTAINERS" ]; then
+                docker rm -f $CONTAINERS
+            fi
+            '''
+            // Clean up Docker images
+            sh '''
+            IMAGES=$(docker images -q ${DOCKER_IMAGE}:${DOCKER_TAG})
+            if [ -n "$IMAGES" ]; then
+                docker rmi -f $IMAGES
+            fi
+            '''
         }
 
         success {
